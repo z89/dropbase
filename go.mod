@@ -1,4 +1,4 @@
-module dropbase/instance
+module dropbase/dropbase
 
 go 1.19
 
