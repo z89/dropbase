@@ -11,10 +11,27 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-func main() {
-	routes := []string{"http://localhost:3000/"}
+func output(route string, res *http.Response) {
+	switch res.StatusCode {
+	case 200:
+		log.Printf("successful revalidation on "+route+" with status: %s", res.Status)
+	case 404:
+		log.Printf("could not reach API on "+route+" with status: %s", res.Status)
+	case 500:
+		log.Printf("API on "+route+" has an internal server error with status: %s", res.Status)
+	default:
+		log.Printf("response did not return a 200, 404, or 500 status, status: %s", res.Status)
+	}
+}
 
+func main() {
 	app := pocketbase.New()
+
+	routes := []string{}
+
+	for i := 5; i < len(os.Args); i++ {
+		routes = append(routes, os.Args[i])
+	}
 
 	err := godotenv.Load(".env")
 
@@ -28,7 +45,7 @@ func main() {
 		values.Add("permalink", record.Record.GetStringDataValue("permalink"))
 
 		for _, route := range routes {
-			res, err := http.PostForm(route+"api/revalidate", values)
+			res, err := http.PostForm(route+"/api/revalidate", values)
 
 			if err != nil {
 				println(err)
@@ -36,7 +53,7 @@ func main() {
 
 			defer res.Body.Close()
 
-			log.Printf("record has been updated, status: %s", res.Status)
+			output(route, res)
 		}
 
 		return nil
@@ -48,7 +65,7 @@ func main() {
 		values.Add("permalink", record.Record.GetStringDataValue("permalink"))
 
 		for _, route := range routes {
-			res, err := http.PostForm(route+"api/revalidate", values)
+			res, err := http.PostForm(route+"/api/revalidate", values)
 
 			if err != nil {
 				println(err)
@@ -56,7 +73,7 @@ func main() {
 
 			defer res.Body.Close()
 
-			log.Printf("record has been created, status: %s", res.Status)
+			output(route, res)
 		}
 
 		return nil
@@ -69,7 +86,7 @@ func main() {
 		values.Add("permalink", record.Record.GetStringDataValue("permalink"))
 
 		for _, route := range routes {
-			res, err := http.PostForm(route+"api/revalidate", values)
+			res, err := http.PostForm(route+"/api/revalidate", values)
 
 			if err != nil {
 				println(err)
@@ -77,7 +94,7 @@ func main() {
 
 			defer res.Body.Close()
 
-			log.Printf("record has been deleted, status: %s", res.Status)
+			output(route, res)
 		}
 
 		return nil
