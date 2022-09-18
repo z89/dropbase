@@ -39,65 +39,70 @@ func main() {
 	if err != nil {
 		log.Fatalf("some error occured. err: %s", err)
 	}
-
 	app.OnRecordAfterUpdateRequest().Add(func(record *core.RecordUpdateEvent) error {
-		values := url.Values{}
-		values.Add("api_key", os.Getenv(("API_KEY")))
-		values.Add("permalink", record.Record.GetStringDataValue("permalink"))
+		if record.Record.Collection().Name == "categories" || record.Record.Collection().Name == "products" {
+			values := url.Values{}
+			values.Add("api_key", os.Getenv(("API_KEY")))
+			values.Add("permalink", record.Record.GetStringDataValue("permalink"))
 
-		for _, route := range routes {
-			res, err := pester.PostForm(route+"/api/revalidate", values)
+			for _, route := range routes {
+				res, err := pester.PostForm(route+"/api/revalidate", values)
 
-			if err != nil {
-				log.Fatalf("error posting to "+route+": %s", err)
+				if err != nil {
+					log.Fatalf("error posting to "+route+": %s", err)
+				}
+
+				defer res.Body.Close()
+
+				output(route, res)
 			}
-
-			defer res.Body.Close()
-
-			output(route, res)
 		}
 
 		return nil
 	})
 
 	app.OnRecordAfterCreateRequest().Add(func(record *core.RecordCreateEvent) error {
-		values := url.Values{}
-		values.Add("api_key", os.Getenv(("API_KEY")))
-		values.Add("permalink", record.Record.GetStringDataValue("permalink"))
+		if record.Record.Collection().Name == "categories" || record.Record.Collection().Name == "products" {
+			values := url.Values{}
+			values.Add("api_key", os.Getenv(("API_KEY")))
+			values.Add("permalink", record.Record.GetStringDataValue("permalink"))
 
-		for _, route := range routes {
-			res, err := pester.PostForm(route+"/api/revalidate", values)
+			for _, route := range routes {
+				res, err := pester.PostForm(route+"/api/revalidate", values)
 
-			if err != nil {
-				log.Fatalf("error posting to "+route+": %s", err)
+				if err != nil {
+					log.Fatalf("error posting to "+route+": %s", err)
+				}
+
+				defer res.Body.Close()
+
+				output(route, res)
 			}
-
-			defer res.Body.Close()
-
-			output(route, res)
 		}
 
 		return nil
 	})
 
 	app.OnRecordAfterDeleteRequest().Add(func(record *core.RecordDeleteEvent) error {
-		values := url.Values{}
-		values.Add("action", "delete")
-		values.Add("api_key", os.Getenv(("API_KEY")))
-		values.Add("permalink", record.Record.GetStringDataValue("permalink"))
+		if record.Record.Collection().Name == "categories" || record.Record.Collection().Name == "products" {
+			values := url.Values{}
+			values.Add("action", "delete")
+			values.Add("api_key", os.Getenv(("API_KEY")))
+			values.Add("permalink", record.Record.GetStringDataValue("permalink"))
 
-		for _, route := range routes {
-			res, err := pester.PostForm(route+"/api/revalidate", values)
+			for _, route := range routes {
+				res, err := pester.PostForm(route+"/api/revalidate", values)
 
-			if err != nil {
-				log.Fatalf("error posting to "+route+": %s", err)
+				if err != nil {
+					log.Fatalf("error posting to "+route+": %s", err)
+				}
+
+				defer res.Body.Close()
+
+				output(route, res)
 			}
 
-			defer res.Body.Close()
-
-			output(route, res)
 		}
-
 		return nil
 	})
 
