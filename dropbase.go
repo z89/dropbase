@@ -42,7 +42,6 @@ func send(routes []string, values url.Values) {
 }
 
 func getCategory(app *pocketbase.PocketBase, target string) string {
-
 	collection, err := app.Dao().FindCollectionByNameOrId("categories")
 
 	if err != nil {
@@ -80,6 +79,10 @@ func main() {
 	var cached_category *models.Record
 
 	app.OnRecordBeforeUpdateRequest().Add(func(e *core.RecordUpdateEvent) error {
+		cached_product_categories = []string{}
+		cached_category = nil
+		cached_product = nil
+
 		if e.Record.Collection().Name == "products" {
 			product, err := app.Dao().FindRecordById(e.Record.Collection(), e.Record.Id, nil)
 
@@ -108,25 +111,24 @@ func main() {
 	app.OnRecordAfterUpdateRequest().Add(func(record *core.RecordUpdateEvent) error {
 		values := url.Values{}
 		values.Add("api_key", os.Getenv(("API_KEY")))
-		values.Add("type", "update")
 
 		if record.Record.Collection().Name == "categories" {
-			values.Add("category_old_permalink", cached_category.GetStringDataValue("permalink"))
-			values.Add("category_new_permalink", record.Record.GetStringDataValue("permalink"))
+			values.Add("old_category", cached_category.GetStringDataValue("permalink"))
+			values.Add("new_category", record.Record.GetStringDataValue("permalink"))
 
 			send(routes, values)
 		} else if record.Record.Collection().Name == "products" {
-			var product_categories []string
+			var product_categories = []string{}
 
 			for _, category := range record.Record.GetStringSliceDataValue("category") {
 				product_categories = append(product_categories, getCategory(app, category))
 			}
 
-			values.Add("product_new_permalink", record.Record.GetStringDataValue("permalink"))
-			values.Add("product_new_categories", strings.Join(product_categories, ","))
+			values.Add("new_product", record.Record.GetStringDataValue("permalink"))
+			values.Add("new_categories", strings.Join(product_categories, ","))
 
-			values.Add("product_old_permalink", cached_product.GetStringDataValue("permalink"))
-			values.Add("product_old_categories", strings.Join(cached_product_categories, ","))
+			values.Add("old_product", cached_product.GetStringDataValue("permalink"))
+			values.Add("old_categories", strings.Join(cached_product_categories, ","))
 
 			send(routes, values)
 		}
@@ -137,21 +139,20 @@ func main() {
 	app.OnRecordAfterCreateRequest().Add(func(record *core.RecordCreateEvent) error {
 		values := url.Values{}
 		values.Add("api_key", os.Getenv(("API_KEY")))
-		values.Add("type", "create")
 
 		if record.Record.Collection().Name == "categories" {
-			values.Add("category_permalink", record.Record.GetStringDataValue("permalink"))
+			values.Add("new_category", record.Record.GetStringDataValue("permalink"))
 
 			send(routes, values)
 		} else if record.Record.Collection().Name == "products" {
-			var product_categories []string
+			var product_categories = []string{}
 
 			for _, category := range record.Record.GetStringSliceDataValue("category") {
 				product_categories = append(product_categories, getCategory(app, category))
 			}
 
-			values.Add("product_permalink", record.Record.GetStringDataValue("permalink"))
-			values.Add("product_categories", strings.Join(product_categories, ","))
+			values.Add("new_product", record.Record.GetStringDataValue("permalink"))
+			values.Add("new_categories", strings.Join(product_categories, ","))
 
 			send(routes, values)
 		}
@@ -159,18 +160,13 @@ func main() {
 		return nil
 	})
 
-	app.OnRecordBeforeDeleteRequest().Add(func(e *core.RecordDeleteEvent) error {
-		if e.Record.Collection().Name == "categories" {
-			category, err := app.Dao().FindRecordById(e.Record.Collection(), e.Record.Id, nil)
+	app.OnRecordBeforeDeleteRequest().Add(func(record *core.RecordDeleteEvent) error {
+		cached_product_categories = []string{}
+		cached_category = nil
+		cached_product = nil
 
-			if err != nil {
-				log.Printf("some error occured. err: %s", err)
-			}
-
-			cached_category = category
-		} else if e.Record.Collection().Name == "products" {
-
-			product, err := app.Dao().FindRecordById(e.Record.Collection(), e.Record.Id, nil)
+		if record.Record.Collection().Name == "products" {
+			product, err := app.Dao().FindRecordById(record.Record.Collection(), record.Record.Id, nil)
 
 			if err != nil {
 				log.Printf("some error occured. err: %s", err)
@@ -178,9 +174,17 @@ func main() {
 
 			cached_product = product
 
-			for _, category := range e.Record.GetStringSliceDataValue("category") {
+			for _, category := range record.Record.GetStringSliceDataValue("category") {
 				cached_product_categories = append(cached_product_categories, getCategory(app, category))
 			}
+		} else if record.Record.Collection().Name == "categories" {
+			category, err := app.Dao().FindRecordById(record.Record.Collection(), record.Record.Id, nil)
+
+			if err != nil {
+				log.Printf("some error occured. err: %s", err)
+			}
+
+			cached_category = category
 		}
 
 		return nil
@@ -189,15 +193,14 @@ func main() {
 	app.OnRecordAfterDeleteRequest().Add(func(record *core.RecordDeleteEvent) error {
 		values := url.Values{}
 		values.Add("api_key", os.Getenv(("API_KEY")))
-		values.Add("type", "delete")
 
 		if record.Record.Collection().Name == "categories" {
-			values.Add("category_old_permalink", cached_category.GetStringDataValue("permalink"))
+			values.Add("old_category", cached_category.GetStringDataValue("permalink"))
 
 			send(routes, values)
 		} else if record.Record.Collection().Name == "products" {
-			values.Add("product_old_permalink", cached_product.GetStringDataValue("permalink"))
-			values.Add("product_old_categories", strings.Join(cached_product_categories, ","))
+			values.Add("old_product", cached_product.GetStringDataValue("permalink"))
+			values.Add("old_categories", strings.Join(cached_product_categories, ","))
 
 			send(routes, values)
 		}
