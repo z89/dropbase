@@ -1,4 +1,4 @@
-module dropbase/dropbase
+module github.com/z89/dropbase
 
 go 1.19
 
@@ -6,6 +6,7 @@ require (
 	github.com/joho/godotenv v1.4.0
 	github.com/pocketbase/pocketbase v0.7.2
 	github.com/sethgrid/pester v1.2.0
+	github.com/spf13/cobra v1.5.0
 )
 
 require (
@@ -53,7 +54,6 @@ require (
 	github.com/pocketbase/dbx v1.6.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
-	github.com/spf13/cobra v1.5.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.1 // indirect
