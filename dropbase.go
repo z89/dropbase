@@ -52,13 +52,13 @@ func getCategory(app *pocketbase.PocketBase, target string) string {
 		log.Printf("an error occured. err: %s", err)
 	}
 
-	result, err := app.Dao().FindFirstRecordByData(collection, "name", target)
+	result, err := app.Dao().FindFirstRecordByData(collection.Name, "name", target)
 
 	if err != nil {
 		log.Print(err)
 	}
 
-	categoryPermalink := result.GetStringDataValue("permalink")
+	categoryPermalink := result.GetString("permalink")
 
 	return categoryPermalink
 }
@@ -85,7 +85,7 @@ func main() {
 
 		// cache product & it's categories if the update request collection is products
 		if e.Record.Collection().Name == "products" {
-			product, err := app.Dao().FindRecordById(e.Record.Collection(), e.Record.Id, nil)
+			product, err := app.Dao().FindRecordById(e.Record.Collection().Name, e.Record.Id, nil)
 
 			if err != nil {
 				log.Printf("an error occured. err: %s", err)
@@ -93,14 +93,14 @@ func main() {
 
 			cached_product = product
 
-			for _, category := range e.Record.GetStringSliceDataValue("category") {
+			for _, category := range e.Record.GetStringSlice("category") {
 				cached_product_categories = append(cached_product_categories, getCategory(app, category))
 			}
 		}
 
 		// cache category if the update request collection is categories
 		if e.Record.Collection().Name == "categories" {
-			category, err := app.Dao().FindRecordById(e.Record.Collection(), e.Record.Id, nil)
+			category, err := app.Dao().FindRecordById(e.Record.Collection().Name, e.Record.Id, nil)
 
 			if err != nil {
 				log.Printf("an error occured. err: %s", err)
@@ -120,15 +120,15 @@ func main() {
 		if record.Record.Collection().Name == "products" {
 			var product_categories = []string{}
 
-			for _, category := range record.Record.GetStringSliceDataValue("category") {
+			for _, category := range record.Record.GetStringSlice("category") {
 				product_categories = append(product_categories, getCategory(app, category))
 			}
 
 			// send new & old product permalinks & their categories
-			values.Add("new_product", record.Record.GetStringDataValue("permalink"))
+			values.Add("new_product", record.Record.GetString("permalink"))
 			values.Add("new_categories", strings.Join(product_categories, ","))
 
-			values.Add("old_product", cached_product.GetStringDataValue("permalink"))
+			values.Add("old_product", cached_product.GetString("permalink"))
 			values.Add("old_categories", strings.Join(cached_product_categories, ","))
 
 			send(routes, values)
@@ -137,8 +137,8 @@ func main() {
 		// if the update request collection is categories
 		if record.Record.Collection().Name == "categories" {
 			// send new & old category permalinks & their categories
-			values.Add("old_category", cached_category.GetStringDataValue("permalink"))
-			values.Add("new_category", record.Record.GetStringDataValue("permalink"))
+			values.Add("old_category", cached_category.GetString("permalink"))
+			values.Add("new_category", record.Record.GetString("permalink"))
 
 			send(routes, values)
 		}
@@ -154,12 +154,12 @@ func main() {
 		if record.Record.Collection().Name == "products" {
 			var product_categories = []string{}
 
-			for _, category := range record.Record.GetStringSliceDataValue("category") {
+			for _, category := range record.Record.GetStringSlice("category") {
 				product_categories = append(product_categories, getCategory(app, category))
 			}
 
 			// send newly created product permalink & it's categories
-			values.Add("new_product", record.Record.GetStringDataValue("permalink"))
+			values.Add("new_product", record.Record.GetString("permalink"))
 			values.Add("new_categories", strings.Join(product_categories, ","))
 
 			send(routes, values)
@@ -168,7 +168,7 @@ func main() {
 		// if the creation request collection is categories
 		if record.Record.Collection().Name == "categories" {
 			// send newly created category permalink
-			values.Add("new_category", record.Record.GetStringDataValue("permalink"))
+			values.Add("new_category", record.Record.GetString("permalink"))
 
 			send(routes, values)
 		}
@@ -183,7 +183,7 @@ func main() {
 
 		// cache product & it's categories if the delete request collection is products
 		if record.Record.Collection().Name == "products" {
-			product, err := app.Dao().FindRecordById(record.Record.Collection(), record.Record.Id, nil)
+			product, err := app.Dao().FindRecordById(record.Record.Collection().Name, record.Record.Id, nil)
 
 			if err != nil {
 				log.Printf("an error occured. err: %s", err)
@@ -191,14 +191,14 @@ func main() {
 
 			cached_product = product
 
-			for _, category := range record.Record.GetStringSliceDataValue("category") {
+			for _, category := range record.Record.GetStringSlice("category") {
 				cached_product_categories = append(cached_product_categories, getCategory(app, category))
 			}
 		}
 
 		// cache category if the delete request collection is categories
 		if record.Record.Collection().Name == "categories" {
-			category, err := app.Dao().FindRecordById(record.Record.Collection(), record.Record.Id, nil)
+			category, err := app.Dao().FindRecordById(record.Record.Collection().Name, record.Record.Id, nil)
 
 			if err != nil {
 				log.Printf("an error occured. err: %s", err)
@@ -217,7 +217,7 @@ func main() {
 		// if the delete request collection is products
 		if record.Record.Collection().Name == "products" {
 			// send old deleted product permalink & it's categories
-			values.Add("old_product", cached_product.GetStringDataValue("permalink"))
+			values.Add("old_product", cached_product.GetString("permalink"))
 			values.Add("old_categories", strings.Join(cached_product_categories, ","))
 
 			send(routes, values)
@@ -226,7 +226,7 @@ func main() {
 		// if the delete request collection is cateogries
 		if record.Record.Collection().Name == "categories" {
 			// send old deleted category permalink
-			values.Add("old_category", cached_category.GetStringDataValue("permalink"))
+			values.Add("old_category", cached_category.GetString("permalink"))
 
 			send(routes, values)
 		}
